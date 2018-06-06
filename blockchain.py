@@ -16,12 +16,25 @@ def get_last_blockchain_value():
         return None
     return blockchain[-1]
 
+def get_balance(participant):
+    amount_sent = 0
+    tx_sender = [[tx['amount'] for tx in block['transactions'] if tx['sender'] == participant] for block in blockchain]
+    for tx in tx_sender:
+        if len(tx) > 0:
+            amount_sent += tx[0]
+    amount_received = 0
+    tx_receiver = [[tx['amount'] for tx in block['transactions'] if tx['receiver'] == participant] for block in blockchain]
+    for tx in tx_receiver:
+        if len(tx) > 0:
+            amount_received += tx[0]
+    return amount_received - amount_sent
+
 
 def hash_block(block):
     return '-'.join(str(block[key]) for key in block)
 
 
-def add_transaction(reciever, sender=owner, amount=1.0):
+def add_transaction(receiver, sender=owner, amount=1.0):
     ''' Appends the last transaction amount to the blockchain list 
         Arguments :
             :sender: The sender of the coins
@@ -30,12 +43,12 @@ def add_transaction(reciever, sender=owner, amount=1.0):
     '''
     transaction = {
         'sender': sender,
-        'receiver': reciever,
+        'receiver': receiver,
         'amount': amount
     }
     open_transactions.append(transaction)
     participants.add(sender)
-    participants.add(reciever)
+    participants.add(receiver)
 
 
 def mine_block():
@@ -49,6 +62,7 @@ def mine_block():
         'transactions': open_transactions
     }
     blockchain.append(block)
+    return True
 
 
 def get_transaction_value():
@@ -94,11 +108,13 @@ while waiting_for_input:
     user_choice = get_user_choice()
     if user_choice == '1':
         tx_data =  get_transaction_value()
-        reciever, amount = tx_data
-        add_transaction(reciever, amount=amount)
+        receiver, amount = tx_data
+        add_transaction(receiver, amount=amount)
         print(open_transactions)
     elif user_choice == '2':
-        mine_block()
+        if mine_block():
+            open_transactions = []
+        print(get_balance('Neo'))
     elif user_choice == '3':
         print_blockchain_elements()
     elif user_choice == '4':
